@@ -19,16 +19,16 @@ def map_nested_dicts(ob, key, func, func_filt):
         return func(ob) if func_filt(key) else ob
 
 
-def load_runs(logs_paths, num_values, keys, vmin, vmax):
+def load_runs(logs_paths, num_values, prefix, keys, vmin, vmax):
     steps = np.arange(num_values)
-    logs = read_tensorboard(logs_paths, num_values, keys)
+    logs = read_tensorboard(logs_paths, num_values, prefix, keys)
     if vmin or vmax:
         logs = map_nested_dicts(
             logs, '', lambda x: np.clip(x, vmin, vmax), lambda k: 'values' in k)
     return logs
 
 
-def plot(logs_paths, key, output, padding, start, limit, num_values, xaxis,
+def plot(logs_paths, prefix, key, output, padding, start, limit, num_values, xaxis,
          xscales, yscale, smooth, vmin, vmax, figsize, title, xlabel, ylabel,
          sci_notation, legend, resolution, logx, logy, sort):
     fig, ax = plt.subplots(figsize=figsize)
@@ -42,7 +42,7 @@ def plot(logs_paths, key, output, padding, start, limit, num_values, xaxis,
     keys = [key]
     domains = []
     lines = []
-    logs = load_runs(logs_paths, num_values, keys, vmin, vmax)
+    logs = load_runs(logs_paths, num_values, prefix, keys, vmin, vmax)
     for log_name, log in logs.items():
         log = log[keys[0]]
         steps, timestamps, values = log['steps'], log['timestamps'], log[

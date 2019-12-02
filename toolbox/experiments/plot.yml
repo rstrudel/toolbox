@@ -1,0 +1,27 @@
+padding: 0.1
+start: null
+limit: null
+num_values: 200
+xscales: null
+yscale: 1
+smooth: 0
+vmin: null
+vmax: null
+figsize:
+- 3
+- 4
+title: null
+xlabel: null
+ylabel: null
+sci_notation: null
+legend: best
+resolution: 50
+logx: false
+logy: false
+sort: false
+
+# xaxis: steps
+# xlabel: Steps
+xaxis: time
+xlabel: Hours
+savedir: /home/rstrudel/experiments

@@ -13,7 +13,7 @@ class Lines:
 
     def __init__(self, resolution=20, smooth=None):
         self._resolution = resolution
-        self._smooth = smooth
+        self._smooth_weight = smooth
 
     def __call__(self, ax, domains, lines, labels):
         assert len(domains) == len(lines) == len(labels)
@@ -21,6 +21,7 @@ class Lines:
                     marker) in enumerate(zip(labels, self.COLORS,
                                              self.MARKERS)):
             domain, line = domains[index], lines[index]
+            line = self.smooth(line, self._smooth_weight)
             ax.plot(domain, line, c=color, label=label)
         self._plot_legend(ax, lines, labels)
 
@@ -36,12 +37,17 @@ class Lines:
         legend.get_frame().set_edgecolor('white')
         for line in legend.get_lines():
             line.set_alpha(1)
+    def smooth(self, scalars, weight):
+        """
+        weight in [0, 1]
+        exponential moving average, same as tensorboard
+        """
+        assert weight >= 0 and weight <= 1
+        last = scalars[0]
+        smoothed = list()
+        for point in scalars:
+            smoothed_val = last * weight + (1 - weight) * point
+            smoothed.append(smoothed_val)
+            last = smoothed_val
 
-    def _smooth_line(self, values, steps, amount):
-        # Step-aware smoothing (for irregular steps).
-        # weights = (1 - 10 ** -amount) ** np.abs(steps[:, None] - steps[None, :])
-        weights = amount**np.abs(
-            np.arange(len(values))[:, None] - np.arange(len(values))[None, :])
-        weights /= weights.sum(1)
-        smooth_values = values.dot(weights)
-        return smooth_values
+        return smoothed

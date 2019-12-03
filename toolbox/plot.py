@@ -30,7 +30,7 @@ def load_runs(logs_paths, num_values, prefix, keys, vmin, vmax):
 
 def plot(logs_paths, prefix, key, output, padding, start, limit, num_values, xaxis,
          xscales, yscale, smooth, vmin, vmax, figsize, title, xlabel, ylabel,
-         sci_notation, legend, resolution, logx, logy, sort):
+         sci_notation, legend, bbox_to_anchor, resolution, logx, logy, sort):
     fig, ax = plt.subplots(figsize=figsize)
     if title:
         fig.suptitle(title)
@@ -70,8 +70,8 @@ def plot(logs_paths, prefix, key, output, padding, start, limit, num_values, xax
         if xscales:
             steps /= xscales[index]
     plot_lines = Lines(resolution=resolution, smooth=smooth)
-    # plot_lines.LEGEND['loc'] = legend
-    plot_lines.LEGEND['bbox_to_anchor'] = (1, 0.5)
+    plot_lines.LEGEND['loc'] = legend
+    plot_lines.LEGEND['bbox_to_anchor'] = bbox_to_anchor
     plot_lines(ax, domains, lines, logs.keys())
     if logx:
         ax.set_xscale('log', nonposx='clip')
@@ -118,19 +118,20 @@ def plot(logs_paths, prefix, key, output, padding, start, limit, num_values, xax
 @click.option('--sci-notation/--no-sci-notation', default=False, is_flag=True)
 # Plotting
 @click.option('--legend', default='best')
+@click.option('--bbox-to-anchor', default=(0.0, 0.0))  # Blog
 @click.option('--resolution', default=50, type=int)
 @click.option('--logx/--no-logx', default=False, is_flag=True)
 @click.option('--logy/--no-logy', default=False, is_flag=True)
 @click.option('--sort/--no-sort', default=False, is_flag=True)
 def main(logs, key, output, padding, start, limit, num_values, xaxis, xscales,
          yscale, smooth, vmin, vmax, figsize, title, xlabel, ylabel,
-         sci_notation, legend, resolution, logx, logy, sort):
+         sci_notation, legend, bbox_to_anchor, resolution, logx, logy, sort):
     # if xscales:
     #     assert len(names) == len(xscales)
     logging.basicConfig(format='%(message)s', level=logging.INFO)
     plot(logs, key, output, padding, start, limit, num_values, xaxis, xscales,
          yscale, smooth, vmin, vmax, figsize, title, xlabel, ylabel,
-         sci_notation, legend, resolution, logx, logy, sort)
+         sci_notation, legend, bbox_to_anchor, resolution, logx, logy, sort)
 
 
 if __name__ == '__main__':

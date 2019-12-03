@@ -37,6 +37,7 @@ class Lines:
         legend.get_frame().set_edgecolor('white')
         for line in legend.get_lines():
             line.set_alpha(1)
+
     def smooth(self, scalars, weight):
         """
         weight in [0, 1]

@@ -4,17 +4,20 @@ limit: null
 num_values: 200
 xscales: null
 yscale: 1
-smooth: 0
+smooth: 0.8
 vmin: null
 vmax: null
 figsize:
-- 3
 - 4
+- 3
 title: null
 xlabel: null
 ylabel: null
 sci_notation: null
-legend: best
+legend: lower center
+bbox_to_anchor:
+- 0.5
+- -0.8
 resolution: 50
 logx: false
 logy: false

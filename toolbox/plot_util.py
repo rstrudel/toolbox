@@ -4,14 +4,14 @@ from itertools import cycle
 
 class Lines:
 
-    COLORS = cycle([
-        '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33',
-        '#a65628', '#f781bf'
-    ])
-    MARKERS = cycle('os^Dp>d<')
-    LEGEND = dict(fontsize='medium', labelspacing=0, numpoints=1)
 
     def __init__(self, resolution=20, smooth=None):
+        self.COLORS = cycle([
+            '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33',
+            '#a65628', '#f781bf'
+        ])
+        self.MARKERS = cycle('os^Dp>d<')
+        self.LEGEND = dict(fontsize='medium', labelspacing=0, numpoints=1)
         self._resolution = resolution
         self._smooth_weight = smooth
 
@@ -22,7 +22,10 @@ class Lines:
                                              self.MARKERS)):
             domain, line = domains[index], lines[index]
             line = self.smooth(line, self._smooth_weight)
-            ax.plot(domain, line, c=color, label=label)
+            ax.plot(domain, line[:, 0], color=color, label=label)
+            std_min = line[:, 0] - line[:, 1] / 2
+            std_max = line[:, 0] + line[:, 1] / 2
+            ax.fill_between(domain, std_min, std_max, color=color, alpha=0.2)
         self._plot_legend(ax, lines, labels)
 
     def _plot_legend(self, ax, lines, labels):
@@ -45,10 +48,10 @@ class Lines:
         """
         assert weight >= 0 and weight <= 1
         last = scalars[0]
-        smoothed = list()
-        for point in scalars:
+        smoothed = np.asarray(scalars)
+        for i, point in enumerate(scalars):
             smoothed_val = last * weight + (1 - weight) * point
-            smoothed.append(smoothed_val)
+            smoothed[i] = smoothed_val
             last = smoothed_val
 
         return smoothed

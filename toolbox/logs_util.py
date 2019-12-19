@@ -31,6 +31,13 @@ def read_tensorboard(paths, num_scalars, filter_prefix, filter_key, stats_key=No
 
         tb_to_log_keys = {"wall_time": "timestamps", "step": "steps", "value": "values"}
         log = {"timestamps": [], "steps": [], "values": []}
+        tags = event_acc.Tags()
+        if filter_key not in tags["scalars"]:
+            raise ValueError(
+                "{} is not in the tensorboard logs. Available scalars are: {}".format(
+                    filter_key, tags["scalars"]
+                )
+            )
         scalar_logs = event_acc.Scalars(filter_key)
         for scalar_log in scalar_logs:
             for tb_log_key, log_key in tb_to_log_keys.items():

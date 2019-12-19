@@ -41,7 +41,6 @@ class Logger:
         self._prefix_str = ""
         self._prefixes = []
         self._log_dict = {}
-        self._tb_step = 0
         self._tb_logs = {}
 
         self._snapshot_dir = None
@@ -60,9 +59,9 @@ class Logger:
         log_str = self._prefix_str + str(key)
         self._log_dict[log_str] = val
 
-    def record_dict(self, d, prefix=None):
+    def record_dict(self, d, global_step, prefix=None):
         if prefix is not None:
-            self.record_tensorboard(d, prefix[:-1])
+            self.record_tensorboard(d, global_step, prefix[:-1])
         if prefix is not None:
             self.push_prefix(prefix)
         for k, v in d.items():
@@ -70,7 +69,7 @@ class Logger:
         if prefix is not None:
             self.pop_prefix()
 
-    def record_tensorboard(self, d, prefix):
+    def record_tensorboard(self, d, global_step, prefix):
         if prefix not in self._tb_logs:
             self._tb_logs[prefix] = SummaryWriter(
                 os.path.join(self._snapshot_dir, prefix)
@@ -89,8 +88,7 @@ class Logger:
             idx = k.rfind("_")
             if idx >= 0:
                 k = k[:idx] + "/" + k[idx + 1 :]
-            tb_log.add_scalar(k, v, global_step=self._tb_step)
-        self._tb_step += 1
+            tb_log.add_scalar(k, v, global_step=global_step)
 
     def push_prefix(self, prefix):
         self._prefixes.append(prefix)

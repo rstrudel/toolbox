@@ -1,98 +1,57 @@
-import os
-import glob
 import numpy as np
-from itertools import groupby
-from tensorboard.backend.event_processing import event_accumulator
+from itertools import cycle
 
 
-def read_tensorboard(paths, num_scalars, filter_prefix, filter_key, stats_key=None):
-
-    counter = {}
-    tf_size_guidance = {
-        "compressedHistograms": 10,
-        "images": 0,
-        "scalars": num_scalars,
-        "histograms": 1,
-    }
-
-    log_files = []
-    for path in paths:
-        tb_files = glob.glob(os.path.join(path, "**/*tfevents*"), recursive=True)
-        tb_files = [(tb_file, path) for tb_file in tb_files]
-        log_files += tb_files
-    log_files = [log_file for log_file in log_files if filter_prefix in log_file[0]]
-    log_files.sort(key=lambda x: x[0])
-
-    logs = {}
-    for log_file, path in log_files:
-        log = {}
-        event_acc = event_accumulator.EventAccumulator(log_file, tf_size_guidance)
-        event_acc.Reload()
-
-        tb_to_log_keys = {"wall_time": "timestamps", "step": "steps", "value": "values"}
-        log = {"timestamps": [], "steps": [], "values": []}
-        tags = event_acc.Tags()
-        if filter_key not in tags["scalars"]:
-            raise ValueError(
-                "{} is not in the tensorboard logs. Available scalars are: {}".format(
-                    filter_key, tags["scalars"]
-                )
-            )
-        scalar_logs = event_acc.Scalars(filter_key)
-        for scalar_log in scalar_logs:
-            for tb_log_key, log_key in tb_to_log_keys.items():
-                log[log_key].append(getattr(scalar_log, tb_log_key))
-        for k, v in log.items():
-            log[k] = np.array(v)
-
-        exp_name = path
-        if exp_name[-1] == "/":
-            exp_name = exp_name[:-1]
-        exp_name = exp_name.split("/")[-1]
-        variant = log_file[len(path) :].split("/")[0]
-        log_name = "{}/{}".format(exp_name, variant)
-        logs[log_name] = log
-
-    logs = compute_statistics(logs, num_scalars, stats_key)
-
-    return logs
+class Lines:
 
 
-def compute_statistics(logs, num_scalars, stats_key):
-    if stats_key is None:
-        for k in logs.keys():
-            values = logs[k]["values"]
-            logs[k]["values"] = np.concatenate(
-                (values[:, None], np.zeros_like(values)[:, None]), axis=1
-            )
-        return logs
+    def __init__(self, resolution=20, smooth=None):
+        self.COLORS = cycle([
+            '#377eb8', '#e41a1c', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33',
+            '#a65628', '#f781bf'
+        ])
+        self.MARKERS = cycle('os^Dp>d<')
+        self.LEGEND = dict(fontsize='medium', labelspacing=0, numpoints=1)
+        self._resolution = resolution
+        self._smooth_weight = smooth
 
-    groups = [list(i) for j, i in groupby(logs.keys(), lambda a: a.split(stats_key)[0])]
-    new_logs = {}
-    # compute statistics by prefix of stats_key group
-    for group in groups:
-        # compute statistics only until the experiment with smallest
-        # number of steps
-        steps_max = []
-        group_steps = []
-        group_values = []
-        for log_name in group:
-            new_log_name = log_name.split(stats_key)[0]
-            group_steps.append(logs[log_name]["steps"])
-            group_values.append(logs[log_name]["values"])
-        steps_min = max([s.min() for s in group_steps])
-        steps_max = min([s.max() for s in group_steps])
-        steps = np.linspace(steps_min, steps_max, num_scalars)
-        # timestamps = np.interp(steps, steps_max, num_scalars)
-        for i in range(len(group_values)):
-            group_values[i] = np.interp(steps, group_steps[i], group_values[i])
-        group_values = np.stack(group_values)
+    def __call__(self, ax, domains, lines, labels):
+        assert len(domains) == len(lines) == len(labels)
+        for index, (label, color,
+                    marker) in enumerate(zip(labels, self.COLORS,
+                                             self.MARKERS)):
+            domain, line = domains[index], lines[index]
+            line = self.smooth(line, self._smooth_weight)
+            ax.plot(domain, line[:, 0], color=color, label=label)
+            std_min = line[:, 0] - line[:, 1] / 2
+            std_max = line[:, 0] + line[:, 1] / 2
+            ax.fill_between(domain, std_min, std_max, color=color, alpha=0.2)
+        self._plot_legend(ax, lines, labels)
 
-        new_logs[new_log_name] = {}
-        new_logs[new_log_name]["steps"] = steps
-        new_logs[new_log_name]["timestamps"] = logs[log_name]["timestamps"]
-        new_logs[new_log_name]["values"] = np.concatenate(
-            (group_values.mean(axis=0)[:, None], group_values.std(axis=0)[:, None]),
-            axis=1,
-        )
-    return new_logs
+    def _plot_legend(self, ax, lines, labels):
+        scores = {
+            label: -np.nanmedian(line)
+            for label, line in zip(labels, lines)
+        }
+        handles, labels = ax.get_legend_handles_labels()
+        # handles, labels = zip(*sorted(
+        #     zip(handles, labels), key=lambda x: scores[x[1]]))
+        legend = ax.legend(handles, labels, **self.LEGEND)
+        legend.get_frame().set_edgecolor('white')
+        for line in legend.get_lines():
+            line.set_alpha(1)
+
+    def smooth(self, scalars, weight):
+        """
+        weight in [0, 1]
+        exponential moving average, same as tensorboard
+        """
+        assert weight >= 0 and weight <= 1
+        last = scalars[0]
+        smoothed = np.asarray(scalars)
+        for i, point in enumerate(scalars):
+            smoothed_val = last * weight + (1 - weight) * point
+            smoothed[i] = smoothed_val
+            last = smoothed_val
+
+        return smoothed

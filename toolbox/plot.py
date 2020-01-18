@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from toolbox.plot_util import Lines
+from toolbox.lines import Lines
 from toolbox.logs_util import read_tensorboard
 
 

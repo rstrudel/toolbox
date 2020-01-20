@@ -1,12 +1,16 @@
 padding: 0.1
+# Data
 start: null
 limit: null
-num_values: 200
-xscales: null
+xscale: 1
 yscale: 1
 smooth: 0.8
+xmin: null
+xmax: null
 vmin: null
 vmax: null
+# Labels
+labels: null
 figsize:
 - 4
 - 3
@@ -14,17 +18,20 @@ title: null
 xlabel: null
 ylabel: null
 sci_notation: null
-legend: lower center
+# Plotting
+legend:
+  loc: lower right
+  fontsize: small
 bbox_to_anchor:
 - 0.5
-- -0.8
+- -0.1
 resolution: 50
+grid: 0.5
 logx: false
 logy: false
-sort: false
-
-# xaxis: steps
-# xlabel: Steps
-xaxis: time
-xlabel: Hours
+xaxis: steps
+# xlabel: Epochs
+xlabel: simulation steps
+# xaxis: time
+# xlabel: Hours
 savedir: /home/rstrudel/experiments

@@ -23,9 +23,11 @@ class Lines:
             domain, line = domains[index], lines[index]
             line = self.smooth(line, self._smooth_weight)
             ax.plot(domain, line[:, 0], color=color, label=label)
-            std_min = line[:, 0] - line[:, 1] / 2
-            std_max = line[:, 0] + line[:, 1] / 2
-            ax.fill_between(domain, std_min, std_max, color=color, alpha=0.2)
+            # ax.scatter(domain, line[:, 0], color=color, marker="x")
+            if line.shape[1] > 1:
+                std_min = line[:, 0] - line[:, 1] / 2
+                std_max = line[:, 0] + line[:, 1] / 2
+                ax.fill_between(domain, std_min, std_max, color=color, alpha=0.2)
         self._plot_legend(ax, lines, labels)
 
     def _plot_legend(self, ax, lines, labels):

@@ -1,15 +1,11 @@
-import click
 import logging
-import os
-import collections
-
 import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 from toolbox.lines import Lines
+
+matplotlib.use("Agg")
 
 
 def plot(

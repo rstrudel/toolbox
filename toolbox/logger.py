@@ -1,3 +1,8 @@
+"""
+Based on rllab's logger.
+
+https://github.com/rll/rllab
+"""
 import os
 import datetime
 import dateutil.tz
@@ -9,10 +14,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 def mkdir_p(path, erase_path):
-    try:
+    if not os.path.exists(path):
         os.makedirs(path)
-    except OSError as exc:
-        raise ValueError("Path {} already exists.".format(path))
+    # except OSError as exc:
+    #     raise ValueError("Path {} already exists.".format(path))
 
 
 def setup_logger(

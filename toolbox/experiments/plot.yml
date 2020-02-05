@@ -30,8 +30,9 @@ grid: 0.5
 logx: false
 logy: false
 xaxis: steps
-# xlabel: Epochs
-xlabel: simulation steps
+xlabel: epochs
+# xlabel: simulation steps
 # xaxis: time
 # xlabel: Hours
 savedir: /home/rstrudel/experiments
+# xmax: 500

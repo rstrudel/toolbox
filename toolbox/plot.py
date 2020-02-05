@@ -112,6 +112,7 @@ def plot(
     fig.savefig(
         img_path, bbox_inches="tight", pad_inches=padding, transparent=False, dpi=300
     )
+    plt.close(fig)
 
 
 # @click.command(help="plot logs with matplotlib")

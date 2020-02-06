@@ -52,8 +52,7 @@ class Lines:
         last = scalars[0]
         smoothed = np.asarray(scalars)
         for i, point in enumerate(scalars):
-            smoothed_val = last * weight + (1 - weight) * point
-            smoothed[i] = smoothed_val
-            last = smoothed_val
+            last = last * weight + (1 - weight) * point
+            smoothed[i] = last
 
         return smoothed

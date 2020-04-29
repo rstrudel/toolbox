@@ -34,7 +34,6 @@ def plot(
     grid,
     logx,
     logy,
-    # sort,
 ):
     fig, ax = plt.subplots(figsize=figsize)
     if title:

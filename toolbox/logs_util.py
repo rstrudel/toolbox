@@ -1,11 +1,15 @@
-import os
 import glob
-import numpy as np
+import os
 from itertools import groupby
+
+import numpy as np
+
 from tensorboard.backend.event_processing import event_accumulator
 
 
-def read_tensorboard(paths, num_scalars, filter_prefix, filter_key, stats_key=None):
+def read_tensorboard(
+    paths, num_scalars, filter_prefix, filter_key, stats_key=None, filters_exp=None
+):
 
     counter = {}
     tf_size_guidance = {
@@ -15,12 +19,26 @@ def read_tensorboard(paths, num_scalars, filter_prefix, filter_key, stats_key=No
         "histograms": 1,
     }
 
-    log_files = []
+    # gather all the logfiles in the subdirectories
+    log_files_raw = []
     for path in paths:
         tb_files = glob.glob(os.path.join(path, "**/*tfevents*"), recursive=True)
         tb_files = [(tb_file, path) for tb_file in tb_files]
-        log_files += tb_files
-    log_files = [log_file for log_file in log_files if filter_prefix in log_file[0]]
+        log_files_raw += tb_files
+
+    # filter and keep log files related to a given log key or exp name
+    if filters_exp is None:
+        filters_exp = []
+    log_files = []
+    for log_file in log_files_raw:
+        has_prefix = filter_prefix in log_file[0]
+        has_filter = len(filters_exp) == 0
+        for filter_exp in filters_exp:
+            if filter_exp in log_file[0]:
+                has_filter = True
+        if has_prefix and has_filter:
+            log_files.append(log_file)
+
     log_files.sort(key=lambda x: x[0])
 
     logs = {}
@@ -34,8 +52,8 @@ def read_tensorboard(paths, num_scalars, filter_prefix, filter_key, stats_key=No
         tags = event_acc.Tags()
         if filter_key not in tags["scalars"]:
             raise ValueError(
-                "{} is not in the tensorboard logs. Available scalars are: {}".format(
-                    filter_key, tags["scalars"]
+                "{} is not in the tensorboard logs {}. Available scalars are: {}".format(
+                    filter_key, log_file, tags["scalars"]
                 )
             )
         scalar_logs = event_acc.Scalars(filter_key)

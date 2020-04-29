@@ -3,13 +3,15 @@ Based on rllab's logger.
 
 https://github.com/rll/rllab
 """
-import os
 import datetime
-import dateutil.tz
-import yaml
 import errno
+import os
 import os.path as osp
+
+import dateutil.tz
+
 import torch
+import yaml
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -58,7 +60,7 @@ class Logger:
             now = datetime.datetime.now(dateutil.tz.tzlocal())
             timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
             out = "{} | {}".format(timestamp, out)
-            print(out)
+        print(out)
 
     def record_entry(self, key, val):
         log_str = self._prefix_str + str(key)

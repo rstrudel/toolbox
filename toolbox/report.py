@@ -1,11 +1,12 @@
-import click
-import yaml
 import os
-import numpy as np
 
+import click
+import numpy as np
+import yaml
+
+from toolbox.logs_util import read_tensorboard
 from toolbox.plot import plot
 from toolbox.settings import BASE_DIR
-from toolbox.logs_util import read_tensorboard
 
 
 def map_nested_dicts(ob, key, func, func_filt):
@@ -15,9 +16,11 @@ def map_nested_dicts(ob, key, func, func_filt):
         return func(ob) if func_filt(key) else ob
 
 
-def load_runs(logs_paths, num_values, prefix, keys, stats_key):
+def load_runs(logs_paths, num_values, prefix, keys, stats_key, filters_exp):
     steps = np.arange(num_values)
-    logs = read_tensorboard(logs_paths, num_values, prefix, keys, stats_key)
+    logs = read_tensorboard(
+        logs_paths, num_values, prefix, keys, stats_key, filters_exp
+    )
     keys = list(logs.keys())
     # if vmin or vmax:
     #     logs = map_nested_dicts(
@@ -40,9 +43,18 @@ def main(experiment, num_values, stats_key):
         Loader=yaml.FullLoader,
     )
     savedir = plot_dict.pop("savedir")
-    for exp_paths, plot_name, labels in zip(
-        exp_dict["paths"], exp_dict["plot_name"], exp_dict["labels"]
+    for exp_paths, plot_name, labels, filters_exp in zip(
+        exp_dict["paths"],
+        exp_dict["plot_name"],
+        exp_dict["labels"],
+        exp_dict["filters"],
     ):
+        if not isinstance(exp_paths, list):
+            raise ValueError(
+                "paths to experiments should be a list, not a single string. It should be of the form:\n"
+                "paths:\n"
+                "- - /path_to_experiment"
+            )
         print("Processing {} located in {} ...".format(plot_name, exp_paths))
         for key in exp_dict["keys"]:
             print("{}/{}".format(key["prefix"], key["key"]))
@@ -56,11 +68,7 @@ def main(experiment, num_values, stats_key):
                 savedir, "{}_{}.png".format(plot_name, key["filename"])
             )
             key_plot_dict["logs"] = load_runs(
-                exp_paths,
-                num_values,
-                key["prefix"],
-                key["key"],
-                stats_key,
+                exp_paths, num_values, key["prefix"], key["key"], stats_key, filters_exp
             )
             if key["kwargs"]:
                 key_plot_dict.update(key["kwargs"])

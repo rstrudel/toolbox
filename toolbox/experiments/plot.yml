@@ -20,7 +20,8 @@ ylabel: null
 sci_notation: null
 # Plotting
 legend:
-  loc: lower right
+  loc: center left
+  # loc: best
   fontsize: small
 bbox_to_anchor:
 - 0.5

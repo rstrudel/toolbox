@@ -74,6 +74,10 @@ def plot(
     plot_lines = Lines(resolution=resolution, smooth=smooth)
     plot_lines.LEGEND["loc"] = legend["loc"]
     plot_lines.LEGEND["fontsize"] = legend["fontsize"]
+    plot_lines.LEGEND["bbox_to_anchor"] = (
+        -0.4,
+        -0.2-0.03 * len(logs),
+    )
     # plot_lines.LEGEND["bbox_to_anchor"] = (
     #     bbox_to_anchor[0],
     #     bbox_to_anchor[1] * (len(logs) + 1),

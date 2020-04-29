@@ -29,7 +29,7 @@ def load_runs(logs_paths, num_values, prefix, keys, stats_key):
 @click.command()
 @click.argument("experiment", type=str, required=True)
 @click.option("--num-values", "-nv", type=int, default=500)
-@click.option("--stats-key", "-sk", type=str, default="_run")
+@click.option("--stats-key", "-sk", type=str, default="_seed")
 def main(experiment, num_values, stats_key):
     plot_dict = yaml.load(
         open(os.path.join(BASE_DIR, "experiments", "plot.yml"), "r"),

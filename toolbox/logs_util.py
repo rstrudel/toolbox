@@ -109,8 +109,8 @@ def compute_statistics(logs, num_scalars, stats_key):
         new_logs[new_log_name] = {}
         new_logs[new_log_name]["steps"] = steps
         new_logs[new_log_name]["timestamps"] = logs[log_name]["timestamps"]
-        new_logs[new_log_name]["values"] = np.concatenate(
-            (group_values.mean(axis=0)[:, None], group_values.std(axis=0)[:, None]),
-            axis=1,
-        )
+        v_mean = group_values.mean(axis=0)[:, None]
+        v_min = group_values.min(axis=0)[:, None]
+        v_max = group_values.max(axis=0)[:, None]
+        new_logs[new_log_name]["values"] = np.hstack((v_mean, v_min, v_max))
     return new_logs

@@ -25,9 +25,11 @@ class Lines:
             ax.plot(domain, line[:, 0], color=color, label=label)
             # ax.scatter(domain, line[:, 0], color=color, marker="x")
             if line.shape[1] > 1:
-                std_min = line[:, 0] - line[:, 1] / 2
-                std_max = line[:, 0] + line[:, 1] / 2
-                ax.fill_between(domain, std_min, std_max, color=color, alpha=0.2)
+                # std_min = line[:, 0] - line[:, 1] / 2
+                # std_max = line[:, 0] + line[:, 1] / 2
+                v_min = line[:, 1]
+                v_max = line[:, 2]
+                ax.fill_between(domain, v_min, v_max, color=color, alpha=0.2)
         self._plot_legend(ax, lines, labels)
 
     def _plot_legend(self, ax, lines, labels):

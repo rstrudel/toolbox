@@ -3,6 +3,8 @@ import os
 import click
 import numpy as np
 import yaml
+from termcolor import colored
+
 
 from toolbox.logs_util import read_tensorboard
 from toolbox.plot import plot
@@ -21,12 +23,21 @@ def load_runs(logs_paths, num_values, prefix, keys, stats_key, filters_exp):
     logs = read_tensorboard(
         logs_paths, num_values, prefix, keys, stats_key, filters_exp
     )
-    keys = list(logs.keys())
-    # if vmin or vmax:
-    #     logs = map_nested_dicts(
-    #         logs, "", lambda x: np.clip(x, vmin, vmax), lambda k: "values" in k
-    #     )
     return logs
+
+
+def print_color(s, color):
+    print(colored(s, color))
+
+
+def report_max_value(logs):
+    for k, v in logs.items():
+        idx = v["values"][:, 0].argmax()
+        val_max, val_max_min, val_max_max = v["values"][idx]
+        print_color(k, "blue")
+        print_color(
+            "{:.2f} - [{:.2f}, {:.2f}]".format(100 * val_max, 100 * val_max_min, 100 * val_max_max), "green"
+        )
 
 
 @click.command()
@@ -67,9 +78,12 @@ def main(experiment, num_values, stats_key):
             key_plot_dict["output"] = os.path.join(
                 savedir, "{}_{}.png".format(plot_name, key["filename"])
             )
-            key_plot_dict["logs"] = load_runs(
+            logs = load_runs(
                 exp_paths, num_values, key["prefix"], key["key"], stats_key, filters_exp
             )
+            key_plot_dict["logs"] = logs
+            if "Success" in key["key"]:
+                report_max_value(logs)
             if key["kwargs"]:
                 key_plot_dict.update(key["kwargs"])
             plot(**key_plot_dict)

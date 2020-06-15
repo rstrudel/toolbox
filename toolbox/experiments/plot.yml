@@ -4,7 +4,7 @@ start: null
 limit: null
 xscale: 1
 yscale: 1
-smooth: 0.8
+smooth: 0.7
 xmin: null
 xmax: null
 vmin: null

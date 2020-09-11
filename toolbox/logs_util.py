@@ -51,11 +51,12 @@ def read_tensorboard(
         log = {"timestamps": [], "steps": [], "values": []}
         tags = event_acc.Tags()
         if filter_key not in tags["scalars"]:
-            raise ValueError(
-                "{} is not in the tensorboard logs {}. Available scalars are: {}".format(
-                    filter_key, log_file, tags["scalars"]
-                )
-            )
+            continue
+            # raise ValueError(
+            #     "{} is not in the tensorboard logs {}. Available scalars are: {}".format(
+            #         filter_key, log_file, tags["scalars"]
+            #     )
+            # )
         scalar_logs = event_acc.Scalars(filter_key)
         for scalar_log in scalar_logs:
             for tb_log_key, log_key in tb_to_log_keys.items():
@@ -67,50 +68,68 @@ def read_tensorboard(
         if exp_name[-1] == "/":
             exp_name = exp_name[:-1]
         exp_name = exp_name.split("/")[-1]
-        variant = log_file[len(path) :].split("/")[0]
-        log_name = "{}/{}".format(exp_name, variant)
+        log_key = "/".join(log_file[len(path) :].split("/")[:-1])
+        log_name = "{}/{}".format(exp_name, log_key)
         logs[log_name] = log
 
-    logs = compute_statistics(logs, num_scalars, stats_key)
+    # compute mean over different workers
+    worker_key = "/rank"
+    grouped_logs = group_by_key(logs, worker_key)
+    logs = align_logs_by_group(grouped_logs, num_scalars)
+    average_values(logs)
+
+    # compute stats over different seeds
+    grouped_logs = group_by_key(logs, stats_key)
+    logs = align_logs_by_group(grouped_logs, num_scalars)
+    statistics_values(logs)
 
     return logs
 
 
-def compute_statistics(logs, num_scalars, stats_key):
-    if stats_key is None:
-        for k in logs.keys():
-            values = logs[k]["values"]
-            logs[k]["values"] = np.concatenate(
-                (values[:, None], np.zeros_like(values)[:, None]), axis=1
-            )
-        return logs
-
-    groups = [list(i) for j, i in groupby(logs.keys(), lambda a: a.split(stats_key)[0])]
-    new_logs = {}
-    # compute statistics by prefix of stats_key group
+def group_by_key(d, group_key):
+    d_grouped = {}
+    groups = [list(i) for j, i in groupby(d.keys(), lambda a: a.split(group_key)[0])]
     for group in groups:
-        # compute statistics only until the experiment with smallest
-        # number of steps
+        group_name = group[0].split(group_key)[0]
+        for log_name in group:
+            if group_name not in d_grouped:
+                d_grouped[group_name] = []
+            d_grouped[group_name].append(d[log_name])
+    return d_grouped
+
+
+def align_logs_by_group(grouped_logs, num_scalars):
+    aligned_logs = {}
+    for group_name, group in grouped_logs.items():
         steps_max = []
         group_steps = []
         group_values = []
-        for log_name in group:
-            new_log_name = log_name.split(stats_key)[0]
-            group_steps.append(logs[log_name]["steps"])
-            group_values.append(logs[log_name]["values"])
+        for log in group:
+            group_steps.append(log["steps"])
+            group_values.append(log["values"])
         steps_min = max([s.min() for s in group_steps])
         steps_max = min([s.max() for s in group_steps])
         steps = np.linspace(steps_min, steps_max, num_scalars)
-        # timestamps = np.interp(steps, steps_max, num_scalars)
         for i in range(len(group_values)):
             group_values[i] = np.interp(steps, group_steps[i], group_values[i])
         group_values = np.stack(group_values)
 
-        new_logs[new_log_name] = {}
-        new_logs[new_log_name]["steps"] = steps
-        new_logs[new_log_name]["timestamps"] = logs[log_name]["timestamps"]
-        v_mean = group_values.mean(axis=0)[:, None]
-        v_min = group_values.min(axis=0)[:, None]
-        v_max = group_values.max(axis=0)[:, None]
-        new_logs[new_log_name]["values"] = np.hstack((v_mean, v_min, v_max))
-    return new_logs
+        aligned_logs[group_name] = {}
+        aligned_logs[group_name]["steps"] = steps
+        aligned_logs[group_name]["timestamps"] = log["timestamps"]
+        aligned_logs[group_name]["values"] = group_values
+    return aligned_logs
+
+
+def average_values(grouped_logs):
+    for group_name, group in grouped_logs.items():
+        v_mean = group["values"].mean(axis=0)
+        grouped_logs[group_name]["values"] = v_mean
+
+
+def statistics_values(grouped_logs):
+    for group_name, group in grouped_logs.items():
+        v_mean = group["values"].mean(axis=0)[:, None]
+        v_min = group["values"].min(axis=0)[:, None]
+        v_max = group["values"].max(axis=0)[:, None]
+        grouped_logs[group_name]["values"] = np.hstack((v_mean, v_min, v_max))

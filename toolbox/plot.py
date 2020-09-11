@@ -70,12 +70,16 @@ def plot(
         else:
             raise ValueError("xaxis should be in ('time', 'steps')")
         lines.append(values)
+    if not domains:
+        print("No experiments to plot.")
+        return
+
     plot_lines = Lines(resolution=resolution, smooth=smooth)
     plot_lines.LEGEND["loc"] = legend["loc"]
     plot_lines.LEGEND["fontsize"] = legend["fontsize"]
     plot_lines.LEGEND["bbox_to_anchor"] = (
         -0.4,
-        -0.2-0.03 * len(logs),
+        -0.2 - 0.03 * len(logs),
     )
     # plot_lines.LEGEND["bbox_to_anchor"] = (
     #     bbox_to_anchor[0],

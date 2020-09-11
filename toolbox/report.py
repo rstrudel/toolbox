@@ -30,13 +30,19 @@ def print_color(s, color):
     print(colored(s, color))
 
 
-def report_max_value(logs):
+def report_values(logs, factor=1, max_value=False):
     for k, v in logs.items():
-        idx = v["values"][:, 0].argmax()
-        val_max, val_max_min, val_max_max = v["values"][idx]
+        if max_value:
+            idx = v["values"][:, 0].argmax()
+        else:
+            idx = -1
+        v_mean, v_min, v_max = v["values"][idx]
         print_color(k, "blue")
         print_color(
-            "{:.2f} - [{:.2f}, {:.2f}]".format(100 * val_max, 100 * val_max_min, 100 * val_max_max), "green"
+            "{:.2f} - {:.2f}(-) {:.2f}(+)".format(
+                factor * v_mean, factor * v_min, factor * v_max
+            ),
+            "green",
         )
 
 
@@ -82,8 +88,13 @@ def main(experiment, num_values, stats_key):
                 exp_paths, num_values, key["prefix"], key["key"], stats_key, filters_exp
             )
             key_plot_dict["logs"] = logs
+            factor = 1
+            max_value = False
             if "Success" in key["key"]:
-                report_max_value(logs)
+                factor = 100
+                max_value = True
+            if "Success" in key["key"] or "Loss" in key["key"]:
+                report_values(logs, factor, max_value)
             if key["kwargs"]:
                 key_plot_dict.update(key["kwargs"])
             plot(**key_plot_dict)

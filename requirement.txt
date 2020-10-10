@@ -2,3 +2,5 @@ pyyaml
 sklearn
 matplotlib
 tensorboard
+termcolor
+  

@@ -14,9 +14,9 @@ def read_requirements_file(filename):
 
 
 setup(
-    name='toolbox',
-    version='0.0.1',
-    description='Toolbox for research, plot, log and read logs',
+    name="toolbox",
+    version="0.0.1",
+    description="Toolbox for research, plot, log and read logs",
     packages=find_packages(),
+    install_requires=read_requirements_file("requirements.txt"),
 )
-# install_requires=read_requirements_file('requirements.txt'))

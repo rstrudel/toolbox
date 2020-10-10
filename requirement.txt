@@ -3,4 +3,5 @@ sklearn
 matplotlib
 tensorboard
 termcolor
+regex
   

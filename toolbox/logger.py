@@ -60,7 +60,7 @@ class Logger:
             now = datetime.datetime.now(dateutil.tz.tzlocal())
             timestamp = now.strftime("%Y-%m-%d %H:%M:%S.%f %Z")
             out = "{} | {}".format(timestamp, out)
-        print(out)
+        print(out, flush=True)
 
     def record_entry(self, key, val):
         log_str = self._prefix_str + str(key)
@@ -114,7 +114,7 @@ class Logger:
 
     def dump_log(self):
         for key, value in self._log_dict.items():
-            print("{}: {}".format(key, self.process_value(value)))
+            print("{}: {}".format(key, self.process_value(value)), flush=True)
         progress_name = osp.join(self._snapshot_dir, "progress.yml")
         now = datetime.datetime.now(dateutil.tz.tzlocal())
         self._log_dict["timestamp/"] = now.timestamp()

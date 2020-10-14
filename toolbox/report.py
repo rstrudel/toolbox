@@ -11,18 +11,8 @@ from toolbox.plot import plot
 from toolbox.settings import BASE_DIR
 
 
-def map_nested_dicts(ob, key, func, func_filt):
-    if isinstance(ob, collections.Mapping):
-        return {k: map_nested_dicts(v, k, func, func_filt) for k, v in ob.items()}
-    else:
-        return func(ob) if func_filt(key) else ob
-
-
-def load_runs(logs_paths, num_values, prefix, keys, stats_key, filters_exp):
-    steps = np.arange(num_values)
-    logs = read_tensorboard(
-        logs_paths, num_values, prefix, keys, stats_key, filters_exp
-    )
+def load_runs(logs_paths, keys, stats_key, filters_exp):
+    logs = read_tensorboard(logs_paths, keys, stats_key, filters_exp)
     return logs
 
 
@@ -30,27 +20,25 @@ def print_color(s, color):
     print(colored(s, color))
 
 
-def report_values(logs, factor=1, max_value=False):
+def report_values(log_key, logs, factor=1, max_value=False):
+    print_color(log_key, "blue")
     for k, v in logs.items():
         if max_value:
             idx = v["values"][:, 0].argmax()
         else:
             idx = -1
-        v_mean, v_min, v_max = v["values"][idx]
-        print_color(k, "blue")
+        v_last = v["values"][idx, 0]
+        if "Accuracy" in log_key or "Success" in log_key:
+            v_last *= 100
         print_color(
-            "{:.2f} - {:.2f}(-) {:.2f}(+)".format(
-                factor * v_mean, factor * v_min, factor * v_max
-            ),
-            "green",
+            "{}: {:.2f}".format(k, v_last), "green",
         )
 
 
 @click.command()
 @click.argument("experiment", type=str, required=True)
-@click.option("--num-values", "-nv", type=int, default=500)
-@click.option("--stats-key", "-sk", type=str, default="_seed")
-def main(experiment, num_values, stats_key):
+@click.option("--stats-key", "-sk", type=str, default="/seed")
+def main(experiment, stats_key):
     plot_dict = yaml.load(
         open(os.path.join(BASE_DIR, "experiments", "plot.yml"), "r"),
         Loader=yaml.FullLoader,
@@ -73,31 +61,30 @@ def main(experiment, num_values, stats_key):
                 "- - /path_to_experiment"
             )
         print("Processing {} located in {} ...".format(plot_name, exp_paths))
-        for key in exp_dict["keys"]:
-            print("{}/{}".format(key["prefix"], key["key"]))
-            key_plot_dict = plot_dict.copy()
-            key_plot_dict["labels"] = labels
-            if key["key_label"]:
-                key_plot_dict["ylabel"] = key["key_label"]
+        log_keys = list(exp_dict["log_keys"].keys()) + ["trainer/epoch"]
+        logs = load_runs(exp_paths, log_keys, stats_key, filters_exp)
+
+        epochs = logs.pop("trainer/epoch")
+        for log_key, log_prop in exp_dict["log_keys"].items():
+            log_plot_dict = plot_dict.copy()
+            log_plot_dict["labels"] = labels
+            if log_prop["label"]:
+                log_plot_dict["ylabel"] = log_prop["label"]
             else:
-                key_plot_dict["ylabel"] = key["key"]
-            key_plot_dict["output"] = os.path.join(
-                savedir, "{}_{}.png".format(plot_name, key["filename"])
+                log_plot_dict["ylabel"] = log_key
+            log_plot_dict["output"] = os.path.join(
+                savedir, "{}_{}.png".format(plot_name, log_prop["filename"])
             )
-            logs = load_runs(
-                exp_paths, num_values, key["prefix"], key["key"], stats_key, filters_exp
-            )
-            key_plot_dict["logs"] = logs
+            log_plot_dict["xsteps"] = epochs
+            log_plot_dict["logs"] = logs[log_key]
             factor = 1
-            max_value = False
-            if "Success" in key["key"]:
+            if "Success" in log_key or "Accuracy" in log_key:
                 factor = 100
-                max_value = True
-            if "Success" in key["key"] or "Loss" in key["key"]:
-                report_values(logs, factor, max_value)
-            if key["kwargs"]:
-                key_plot_dict.update(key["kwargs"])
-            plot(**key_plot_dict)
+            max_value = False
+            report_values(log_key, logs[log_key], factor, max_value)
+            if log_prop["kwargs"]:
+                log_plot_dict.update(log_prop["kwargs"])
+            plot(**log_plot_dict)
         print("Plots saved in {}/{}_*.png".format(savedir, plot_name))
 
 

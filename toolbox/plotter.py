@@ -55,7 +55,7 @@ class Plotter:
         self.lines = {}
         self.ims = {}
 
-    def plot_line(self, value, label, ax_i=0, ax_j=0):
+    def plot_line(self, value, label, ax_i=0, ax_j=0, ymin=None, ymax=None):
         ax = self.axs[ax_i, ax_j]
         ax_key = f"{ax_i}{ax_j}"
         if ax_key not in self.lines:
@@ -75,9 +75,14 @@ class Plotter:
 
         lf = self.lim_factor
         ax.set_xlim(lf * vmin[0], lf * vmax[0])
-        ax.set_ylim(lf * vmin[1], lf * vmax[1])
+        # ax.set_ylim(lf * vmin[1], lf * vmax[1])
+        if ymin is None:
+            ymin = lf * vmin[1]
+        if ymax is None:
+            ymax = lf * vmax[1]
+        ax.set_ylim(ymin, ymax)
 
-    def plot_im(self, A, label, ax_i=0, ax_j=0, **imshow_kwargs):
+    def plot_im(self, A, label="", ax_i=0, ax_j=0, **imshow_kwargs):
         ax = self.axs[ax_i, ax_j]
         ax_key = f"{ax_i}{ax_j}"
         if ax_key not in self.ims:

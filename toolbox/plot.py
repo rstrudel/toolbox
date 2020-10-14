@@ -5,7 +5,7 @@ import matplotlib
 
 from toolbox.lines import Lines
 
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 
 
 def plot(
@@ -34,6 +34,7 @@ def plot(
     grid,
     logx,
     logy,
+    xsteps=None,
 ):
     fig, ax = plt.subplots(figsize=figsize)
     if title:
@@ -46,23 +47,25 @@ def plot(
     lines = []
     for log_name, log in logs.items():
         steps, timestamps, values = log["steps"], log["timestamps"], log["values"]
-        if timestamps is None:
-            timestamps = np.zeros(2)
-            assert xaxis != "time"
-        logging.info("\nLine {}".format(log_name))
-        timestamps -= timestamps[0]
-        steps *= xscale
-        values *= yscale
-        if start:
-            start_idx = np.searchsorted(steps, start, "left")
-            steps = steps[start_idx:]
-            timestamps = timestamps[start_idx:]
-            values = values[start:]
-        if limit:
-            limit_idx = np.searchsorted(steps, limit, "left")
-            steps = steps[:limit_idx]
-            timestamps = timestamps[:limit_idx]
-            values = values[:limit_idx]
+        if xsteps:
+            steps = xsteps[log_name]["values"]
+        # if timestamps is None:
+        #     timestamps = np.zeros(2)
+        #     assert xaxis != "time"
+        # logging.info("\nLine {}".format(log_name))
+        # timestamps -= timestamps[0]
+        # steps *= xscale
+        # values *= yscale
+        # if start:
+        #     start_idx = np.searchsorted(steps, start, "left")
+        #     steps = steps[start_idx:]
+        #     timestamps = timestamps[start_idx:]
+        #     values = values[start:]
+        # if limit:
+        #     limit_idx = np.searchsorted(steps, limit, "left")
+        #     steps = steps[:limit_idx]
+        #     timestamps = timestamps[:limit_idx]
+        #     values = values[:limit_idx]
         if xaxis == "time":
             domains.append(timestamps / 3600)
         elif xaxis == "steps":

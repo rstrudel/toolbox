@@ -82,7 +82,7 @@ class Plotter:
             ymax = lf * vmax[1]
         ax.set_ylim(ymin, ymax)
 
-    def plot_im(self, A, label="", ax_i=0, ax_j=0, **imshow_kwargs):
+    def plot_im(self, A, ax_i=0, ax_j=0, label="", **imshow_kwargs):
         ax = self.axs[ax_i, ax_j]
         ax_key = f"{ax_i}{ax_j}"
         if ax_key not in self.ims:
